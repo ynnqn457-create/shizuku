@@ -1121,10 +1121,44 @@ function WorkModule({ data, update }) {
 /* ===================================================================
    ✈️ 旅行
    =================================================================== */
+function TravelCard({ i, onPromote, onNote, onDelete }) {
+  return (
+    <div style={S.card}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ ...S.chip, background: i.area === "国内" ? C.accentSoft : "#EAEDF5", color: i.area === "国内" ? C.accent : C.night }}>
+          {i.area}
+        </span>
+        <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>{i.place}</span>
+        {i.status === "wish" ? (
+          <button onClick={() => onPromote(i.id)} style={{ ...S.btnGhost, padding: "6px 12px", fontSize: 13 }}>
+            計画にする ↑
+          </button>
+        ) : (
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.warn }}>🗓 計画中</span>
+        )}
+      </div>
+      {i.status === "plan" && (
+        <textarea
+          value={i.note}
+          onChange={(e) => onNote(i.id, e.target.value)}
+          placeholder="日程・行きたい酒蔵・宿などのメモ"
+          rows={2}
+          style={{ ...S.input, marginTop: 10, fontSize: 14 }}
+        />
+      )}
+      <button
+        onClick={() => onDelete(i.id)}
+        style={{ background: "none", border: "none", color: C.sub, fontSize: 12, padding: "8px 0 0", cursor: "pointer" }}
+      >
+        削除
+      </button>
+    </div>
+  );
+}
+
 function TravelModule({ data, update }) {
   const [place, setPlace] = useState("");
   const [area, setArea] = useState("国内");
-  const [noteEdit, setNoteEdit] = useState({});
 
   const add = () => {
     if (!place.trim()) return;
@@ -1135,43 +1169,11 @@ function TravelModule({ data, update }) {
     update({ items: data.items.map((i) => (i.id === id ? { ...i, status: "plan" } : i)) });
   const setNote = (id, note) =>
     update({ items: data.items.map((i) => (i.id === id ? { ...i, note } : i)) });
+  const remove = (id) =>
+    update({ items: data.items.filter((x) => x.id !== id) });
 
   const plans = data.items.filter((i) => i.status === "plan");
   const wishes = data.items.filter((i) => i.status === "wish");
-
-  const Card = ({ i }) => (
-    <div style={S.card}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ ...S.chip, background: i.area === "国内" ? C.accentSoft : "#EAEDF5", color: i.area === "国内" ? C.accent : C.night }}>
-          {i.area}
-        </span>
-        <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>{i.place}</span>
-        {i.status === "wish" ? (
-          <button onClick={() => promote(i.id)} style={{ ...S.btnGhost, padding: "6px 12px", fontSize: 13 }}>
-            計画にする ↑
-          </button>
-        ) : (
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.warn }}>🗓 計画中</span>
-        )}
-      </div>
-      {i.status === "plan" && (
-        <textarea
-          value={noteEdit[i.id] !== undefined ? noteEdit[i.id] : i.note}
-          onChange={(e) => setNoteEdit({ ...noteEdit, [i.id]: e.target.value })}
-          onBlur={() => { if (noteEdit[i.id] !== undefined) { setNote(i.id, noteEdit[i.id]); } }}
-          placeholder="日程・行きたい酒蔵・宿などのメモ"
-          rows={2}
-          style={{ ...S.input, marginTop: 10, fontSize: 14 }}
-        />
-      )}
-      <button
-        onClick={() => update({ items: data.items.filter((x) => x.id !== i.id) })}
-        style={{ background: "none", border: "none", color: C.sub, fontSize: 12, padding: "8px 0 0", cursor: "pointer" }}
-      >
-        削除
-      </button>
-    </div>
-  );
 
   return (
     <div style={{ padding: "0 16px" }}>
@@ -1199,13 +1201,13 @@ function TravelModule({ data, update }) {
       {plans.length > 0 && (
         <>
           <div style={{ fontSize: 13, color: C.sub, margin: "10px 4px 6px", fontWeight: 700 }}>🗓 計画中の旅</div>
-          {plans.map((i) => <Card key={i.id} i={i} />)}
+          {plans.map((i) => <TravelCard key={i.id} i={i} onPromote={promote} onNote={setNote} onDelete={remove} />)}
         </>
       )}
 
       <div style={{ fontSize: 13, color: C.sub, margin: "10px 4px 6px", fontWeight: 700 }}>🌏 ウィッシュリスト</div>
       {wishes.length === 0 && <Empty text="行きたい場所を追加しましょう" />}
-      {wishes.map((i) => <Card key={i.id} i={i} />)}
+      {wishes.map((i) => <TravelCard key={i.id} i={i} onPromote={promote} onNote={setNote} onDelete={remove} />)}
     </div>
   );
 }
